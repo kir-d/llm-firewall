@@ -87,6 +87,36 @@ Until context analysis is enabled (the deployment's host flag **and** the policy
 switch), `context` is inert — a safe no-op (`status` `disabled` / `not_provided`).
 {% endhint %}
 
+## Check an output produced outside a wrapper
+
+`protect_stream` / `protect_buffered` already moderate the streamed answer. Use
+`moderate.output` for assistant text that never went through a wrapper —
+proactive notifications, escalation messages, any side channel. Don't route
+such text through `moderate.input`: that evaluates it with **input** rules, so
+output-safety and masking rules silently never run, and injection detectors can
+false-block assistant-style imperatives ("You need to submit…").
+
+```python
+result = await collie.moderate.output(
+    response=assistant_text,
+    conversation_id=conversation_id,   # optional
+    correlation_id=notification_id,    # optional
+)
+
+if result.blocked:
+    return  # don't send it
+# `is not None`, NOT `or`: an empty filtered_text is a real mask result
+# (a rule may replace the whole match with "") — `or` would send the
+# original, unmasked text.
+safe = result.filtered_text if result.filtered_text is not None else assistant_text
+send(safe)
+```
+
+`filtered_text` carries the **masked** output — send it, not the original, or
+masking rules silently do nothing. `moderate.output` takes no `context`:
+context is an input surface; for context-aware output filtering use
+`protect_buffered` / `protect_stream`.
+
 ## Stream safely (FastAPI)
 
 `protect_stream` checks the input, calls your LLM **only if it passes**, batches
@@ -350,7 +380,7 @@ Catch typed exceptions instead of parsing strings. All inherit from
 | `ProjectNotFound` / `StreamingFeatureDisabled` / `PlanNotEntitled` / `UnknownRuleType` / `PolicyNotStreamable` *(`PreflightError`)* | preflight says the policy can't be served | fix project/policy configuration; other reason codes (e.g. `rule_unplannable`, `resolution_error:<cause>`) surface as the base `PreflightError` — treat the code as an open string |
 | `ProviderStreamFactoryRequired` | passed a started stream (or non-async-iterable) instead of a factory | pass a zero-arg callable: `lambda: my_stream()` |
 | `ConcurrentSessionUseError` | overlapping `push()` calls on one low-level session | serialize submits per session |
-| `ModerationError` | `moderate.input` job failed/expired or timed out | retry the input check |
+| `ModerationError` | a `moderate.input` / `moderate.output` job failed/expired or timed out | retry the check |
 | `CollieConnectionError` | transport failure (timeout, connection refused) | retry; check connectivity to `base_url` |
 | `CollieAPIError` | unexpected HTTP error or malformed response (`code="invalid_response"`) | inspect `status_code`/`code`; retry or report |
 

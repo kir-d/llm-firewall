@@ -84,6 +84,31 @@ Until context analysis is enabled (host flag **and** policy switch), `context` i
 inert — a safe no-op.
 {% endhint %}
 
+## Check an output produced outside a wrapper
+
+`protectStream` / `protectBuffered` already moderate the streamed answer. Use
+`moderate.output` for assistant text that never went through a wrapper —
+proactive notifications, escalation messages, any side channel. Don't route
+such text through `moderate.input`: that evaluates it with **input** rules, so
+output-safety and masking rules silently never run, and injection detectors can
+false-block assistant-style imperatives ("You need to submit…").
+
+```ts
+const result = await collie.moderate.output({
+  response: assistantText,
+  conversationId,          // optional
+  correlationId: noteId,   // optional
+});
+
+if (result.blocked) return; // don't send it
+send(result.filteredText ?? assistantText); // masking applies here
+```
+
+`filteredText` carries the **masked** output — send it, not the original, or
+masking rules silently do nothing. `moderate.output` takes no `context`:
+context is an input surface; for context-aware output filtering use
+`protectBuffered` / `protectStream`.
+
 ## Stream safely (Express)
 
 `protectStream` checks the input, calls your LLM **only if it passes**, batches
@@ -334,7 +359,7 @@ errors.
 | `ProjectNotFound` / `StreamingFeatureDisabled` / `PlanNotEntitled` / `UnknownRuleType` / `PolicyNotStreamable` (`PreflightError`) | preflight says the policy can't be served | fix project/policy configuration; other reason codes (e.g. `rule_unplannable`, `resolution_error:<cause>`) surface as the base `PreflightError` — treat the code as an open string |
 | `ProviderStreamFactoryRequired` | passed a started stream (or non-async-iterable) instead of a factory | pass a factory returning a fresh async iterable: `(signal) => myStream(signal)` |
 | `ConcurrentSessionUseError` | overlapping `push()` calls on one low-level session | serialize submits per session |
-| `ModerationError` | `moderate.input` job failed/expired or timed out | retry the input check |
+| `ModerationError` | a `moderate.input` / `moderate.output` job failed/expired or timed out | retry the check |
 | `CollieConnectionError` | transport failure (timeout, connection refused) | retry; check connectivity to `baseUrl` |
 | `CollieApiError` | unexpected HTTP error or malformed response (`code === "invalid_response"`) | inspect `statusCode`/`code`; retry or report |
 
