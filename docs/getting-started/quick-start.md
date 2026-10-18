@@ -12,6 +12,10 @@ This CollieAi quick start gets your first secured LLM call running in about five
 
 Prefer to build everything yourself? See [Set up by hand](quick-start.md#set-up-by-hand) below.
 
+{% hint style="warning" %}
+**Setup checklist status: needs enabling.** The checklist described below is available in the dashboard code but appears only after the operator enables setup progress on your CollieAi host.
+{% endhint %}
+
 {% stepper %}
 {% step %}
 ### Sign Up
@@ -31,6 +35,10 @@ After your first sign-in CollieAi opens **Get Started** and creates three things
 * a project, **My project**;
 * an API key for it, starting with `clai_`. It is shown once, so copy it now — **Copy .env line** gives you `COLLIEAI_API_KEY=clai_...` for your app's environment;
 * the **Starter Monitor** policy, which becomes the project's policy and your default policy.
+
+When setup progress is enabled, the dashboard sidebar shows **Finish setting up** on every page until you connect an app. Its four steps are **Create account**, **Get an API key**, **Send a first request** and **Connect your app**. In a collapsed sidebar, the same checklist is a counter such as **2/4**; select it to return to Get Started.
+
+A Playground request completes **Send a first request**, but not **Connect your app**. A request from a proxy, the SDK or Async Jobs completes both remaining request steps once CollieAi accepts it for checking, even when the policy blocks it. At **4 of 4**, the checklist disappears and **Security score** returns to the sidebar.
 
 Starter Monitor runs in **Monitor** mode: nothing is blocked or changed, and every finding appears in **Logs**. When you have seen what it finds, open **Configure rules** and switch the policy to **Enforce**.
 
