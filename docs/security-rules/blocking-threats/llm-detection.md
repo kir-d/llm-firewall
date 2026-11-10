@@ -141,7 +141,7 @@ Each phase has a built-in prompt. In the rule it is stored as `null`, so an impr
 
 * **Phase 1 prompt** (`cascade.router.system_prompt`). You can rewrite the introduction and the descriptions of the categories, but not the set of categories: the prompt must contain each of the 25 categories as a line `category - description`. The rule refuses a prompt that leaves one out and names the missing ones.
 * **Phase 2 prompt** (`cascade.judge.system_prompt`). It must name the three answers `safe`, `injection` and `misuse`.
-* Either prompt is at most 10,000 characters.
+* Either prompt is at most 16,000 characters.
 
 {% hint style="warning" %}
 The built-in prompts are the ones CollieAi measured. A prompt you write is not: run it under Monitor first and check the detections in **Logs**.
@@ -481,7 +481,7 @@ Order 4: Other rules...
 
 * Phase 1: each of the 25 categories must appear as a line `category - description`. The error lists the missing ones.
 * Phase 2: the prompt must name `safe`, `injection` and `misuse`.
-* Either prompt is at most 10,000 characters.
+* Either prompt is at most 16,000 characters.
 
 ### Why does Test rule show a different result than Logs?
 
